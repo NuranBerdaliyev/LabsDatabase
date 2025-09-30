@@ -1,0 +1,150 @@
+CREATE TABLE employees (
+    emp_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    department VARCHAR(50) DEFAULT 'General',
+    salary INT DEFAULT 40000,
+    hire_date DATE,
+    status VARCHAR(50) DEFAULT 'Active'
+);
+
+CREATE TABLE departments(
+    dept_id SERIAL PRIMARY KEY,
+    dept_name VARCHAR(50),
+    budget INT,
+    manager_id INT REFERENCES employees(emp_id)
+);
+
+CREATE TABLE projects(
+    proj_id SERIAL PRIMARY KEY,
+    proj_name VARCHAR(100),
+    dept_id INT REFERENCES departments(dept_id),
+    start_date DATE,
+    end_date DATE,
+    budget INT
+);
+
+INSERT INTO employees(first_name, last_name, department)
+VALUES ('Nuran', 'Berdaliyev', 'IT'),
+       ('Bob', 'Morkov', 'Finance'),
+       ('Anna', 'Petrushka', 'HR');
+
+INSERT INTO employees(first_name, last_name, department, salary, hire_date, status)
+VALUES ('Jackie', 'Chan', 'IT, Finance, Business', 40000*1.9, CURRENT_DATE);
+
+CREATE TEMP TABLE temp_employees AS (SELECT * FROM employees WHERE department='IT');
+
+UPDATE employees SET salary=salary*1.12;
+
+UPDATE employees SET department = CASE
+    WHEN salary>80000 THEN 'Management'
+    WHEN salary BETWEEN 50000 AND 80000 THEN 'Senior'
+    ELSE 'Junior'
+END;
+
+UPDATE employees
+SET department = DEFAULT
+WHERE status = 'Inactive';
+
+UPDATE departments d
+SET budget = (SELECT AVG(salary) * 1.2 FROM employees e WHERE e.department = d.dept_name);
+
+UPDATE employees
+SET salary = salary * 1.15,
+    status = 'Promoted'
+WHERE department = 'Sales';
+
+
+DELETE FROM employees WHERE status = 'Terminated';
+
+
+DELETE FROM employees
+WHERE salary < 40000 AND hire_date > '2023-01-01' AND department IS NULL;
+
+
+DELETE FROM departments
+WHERE dept_name NOT IN (
+    SELECT DISTINCT department FROM employees WHERE department IS NOT NULL
+);
+
+
+DELETE FROM projects
+WHERE end_date < '2023-01-01'
+RETURNING *;
+
+
+INSERT INTO employees (first_name, last_name, salary, department)
+VALUES ('NullGuy', 'Test', NULL, NULL);
+
+
+UPDATE employees
+SET department = 'Unassigned'
+WHERE department IS NULL;
+
+
+DELETE FROM employees
+WHERE salary IS NULL OR department IS NULL;
+
+
+INSERT INTO employees (first_name, last_name, department)
+VALUES ('Chris', 'Green', 'IT')
+RETURNING emp_id, first_name || ' ' || last_name AS full_name;
+
+
+UPDATE employees
+SET salary = salary + 5000
+WHERE department = 'IT'
+RETURNING emp_id, salary - 5000 AS old_salary, salary AS new_salary;
+
+
+DELETE FROM employees
+WHERE hire_date < '2020-01-01'
+RETURNING *;
+
+
+INSERT INTO employees (first_name, last_name, department)
+SELECT 'David', 'Clark', 'HR'
+WHERE NOT EXISTS (
+    SELECT 1 FROM employees WHERE first_name = 'David' AND last_name = 'Clark'
+);
+
+
+UPDATE employees e
+SET salary = salary * CASE
+    WHEN (SELECT budget FROM departments d WHERE d.dept_name = e.department) > 100000
+        THEN 1.10
+    ELSE 1.05
+END;
+
+
+INSERT INTO employees (first_name, last_name, department, salary, hire_date)
+VALUES
+('E1', 'Test', 'Sales', 40000, CURRENT_DATE),
+('E2', 'Test', 'Sales', 42000, CURRENT_DATE),
+('E3', 'Test', 'Sales', 43000, CURRENT_DATE),
+('E4', 'Test', 'Sales', 44000, CURRENT_DATE),
+('E5', 'Test', 'Sales', 45000, CURRENT_DATE);
+
+UPDATE employees
+SET salary = salary * 1.1
+WHERE last_name = 'Test';
+
+
+CREATE TABLE employee_archive AS TABLE employees WITH NO DATA;
+
+INSERT INTO employee_archive
+SELECT * FROM employees WHERE status = 'Inactive';
+
+DELETE FROM employees WHERE status = 'Inactive';
+
+
+UPDATE projects
+SET end_date = end_date + INTERVAL '30 days'
+WHERE budget > 50000
+AND dept_id IN (
+    SELECT d.dept_id
+    FROM departments d
+    JOIN employees e ON e.department = d.dept_name
+    GROUP BY d.dept_id
+    HAVING COUNT(e.emp_id) > 3
+);
