@@ -173,6 +173,86 @@ SELECT
     SUM(salary) AS total_payroll
 FROM employees;
 
+SELECT
+    employee_id,
+    first_name || ' ' || last_name AS full_name,
+    salary
+FROM employees
+WHERE salary > 65000
+
+UNION
+
+SELECT
+    employee_id,
+    first_name || ' ' || last_name AS full_name,
+    salary
+FROM employees
+WHERE hire_date > '2020-01-01';
+
+
+
+SELECT
+    employee_id,
+    first_name || ' ' || last_name AS full_name,
+    salary
+FROM employees
+WHERE department = 'IT'
+
+INTERSECT
+
+SELECT
+    employee_id,
+    first_name || ' ' || last_name AS full_name,
+    salary
+FROM employees
+WHERE salary > 65000;
+
+
+SELECT
+    employee_id,
+    first_name || ' ' || last_name AS full_name
+FROM employees
+
+EXCEPT
+
+SELECT
+    e.employee_id,
+    e.first_name || ' ' || e.last_name AS full_name
+FROM employees e
+JOIN assignments a ON e.employee_id = a.employee_id;
+
+SELECT
+    employee_id,
+    first_name || ' ' || last_name AS full_name
+FROM employees e
+WHERE EXISTS (
+    SELECT 1
+    FROM assignments a
+    WHERE a.employee_id = e.employee_id
+);
+
+SELECT
+    employee_id,
+    first_name || ' ' || last_name AS full_name
+FROM employees
+WHERE employee_id IN (
+    SELECT a.employee_id
+    FROM assignments a
+    JOIN projects p ON a.project_id = p.project_id
+    WHERE p.status = 'Active'
+);
+
+SELECT
+    employee_id,
+    first_name || ' ' || last_name AS full_name,
+    salary
+FROM employees
+WHERE salary > ANY (
+    SELECT salary
+    FROM employees
+    WHERE department = 'Sales'
+);
+
 
 
 
